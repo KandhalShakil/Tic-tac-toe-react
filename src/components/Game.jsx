@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Board from './Board';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles.css';
 
@@ -322,25 +321,6 @@ const Game = () => {
     return `Player ${currentPlayer}'s turn`;
   }
 
-  /**
-   * renderSquare(index) → returns JSX for a square with value and click handler
-   * @param {number} index - Square index
-   * @returns {JSX.Element} - Square component
-   */
-  function renderSquare(index) {
-    const isWinningSquare = winningSquares.includes(index);
-    
-    return (
-      <Square
-        key={index}
-        value={board[index]}
-        onClick={() => handleClick(index)}
-        isWinning={isWinningSquare}
-        disabled={winner || isDraw}
-      />
-    );
-  }
-
   // useEffect Hook for winner/draw detection
   useEffect(() => {
     const winnerInfo = checkWinner(board);
@@ -396,98 +376,84 @@ const Game = () => {
   }, [winner, isDraw]);
 
   return (
-    <div className="game">
-      <h1 className="game-title">🎮 Tic-Tac-Toe</h1>
-      
-      {/* Game mode selector */}
-      <div className="game-controls">
-        <div className="mode-selector">
-          <button 
-            className={`mode-btn ${gameMode === 'human' ? 'active' : ''}`}
-            onClick={() => { setGameMode('human'); resetGame(); }}
-          >
-            👥 Human vs Human
-          </button>
-          <button 
-            className={`mode-btn ${gameMode === 'ai' ? 'active' : ''}`}
-            onClick={() => { setGameMode('ai'); resetGame(); }}
-          >
-            🤖 vs AI
-          </button>
+    <div className="game-container">
+      <div className="game-content">
+        <h1 className="game-title">Tic-Tac-Toe</h1>
+        
+        {/* Game mode selector */}
+        <div className="game-controls">
+          <div className="mode-selector">
+            <button 
+              className={`mode-btn ${gameMode === 'human' ? 'active' : ''}`}
+              onClick={() => { setGameMode('human'); resetGame(); }}
+            >
+              <span className="btn-icon">👥</span>
+              Player vs Player
+            </button>
+            <button 
+              className={`mode-btn ${gameMode === 'ai' ? 'active' : ''}`}
+              onClick={() => { setGameMode('ai'); resetGame(); }}
+            >
+              <span className="btn-icon">🤖</span>
+              Play vs AI
+            </button>
+          </div>
+          
+          {gameMode === 'ai' && (
+            <div className="difficulty-selector">
+              <label>AI Difficulty:</label>
+              <div className="select-wrapper">
+                <select 
+                  value={aiDifficulty} 
+                  onChange={(e) => setAiDifficulty(e.target.value)}
+                  className="difficulty-select"
+                >
+                  <option value="easy">🟢 Easy</option>
+                  <option value="medium">🟡 Medium</option>
+                  <option value="hard">🔴 Hard</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
         
-        {gameMode === 'ai' && (
-          <div className="difficulty-selector">
-            <label>AI Difficulty:</label>
-            <select 
-              value={aiDifficulty} 
-              onChange={(e) => setAiDifficulty(e.target.value)}
-              className="difficulty-select"
-            >
-              <option value="easy">🟢 Easy</option>
-              <option value="medium">🟡 Medium</option>
-              <option value="hard">🔴 Hard</option>
-            </select>
-          </div>
-        )}
+        {/* Game status */}
+        <div className="game-status">
+          <div className="status-text">{getStatusMessage()}</div>
+          {autoRestartCountdown > 0 && (
+            <div className="restart-countdown">
+              Auto-restart in {autoRestartCountdown} seconds...
+            </div>
+          )}
+        </div>
+        
+        {/* Game board */}
+        <div className="board">
+          {board.map((value, index) => {
+            const isWinning = winningSquares.includes(index);
+            return (
+              <button
+                key={index}
+                className={`square ${value ? 'filled' : ''} ${isWinning ? 'winning' : ''}`}
+                onClick={() => handleClick(index)}
+                disabled={winner || isDraw || value}
+              >
+                {value && <span className={`symbol ${value === 'X' ? 'x-symbol' : 'o-symbol'}`}>{value}</span>}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Restart button */}
+        <button 
+          className="restart-button"
+          onClick={resetGame}
+        >
+          <span className="btn-icon">🔄</span>
+          Restart Game
+        </button>
       </div>
-      
-      {/* Game status */}
-      <div className="game-status">
-        {getStatusMessage()}
-        {autoRestartCountdown > 0 && (
-          <div className="restart-countdown">
-            Auto-restart in {autoRestartCountdown} seconds...
-          </div>
-        )}
-      </div>
-      
-      {/* Game board */}
-      <Board 
-        board={board}
-        onSquareClick={handleClick}
-        winningSquares={winningSquares}
-        gameOver={winner || isDraw}
-        renderSquare={renderSquare}
-      />
-      
-      {/* Restart button */}
-      <button 
-        className="restart-button"
-        onClick={resetGame}
-      >
-        🔄 Restart Game
-      </button>
     </div>
-  );
-};
-
-// Square component definition
-const Square = ({ value, onClick, isWinning, disabled }) => {
-  const handleClick = () => {
-    if (disabled || value) return;
-    onClick();
-  };
-
-  const getSquareClasses = () => {
-    let classes = 'square';
-    if (isWinning) classes += ' square-winning';
-    if (disabled && !value) classes += ' square-disabled';
-    if (value) classes += ' square-filled';
-    if (value === 'X') classes += ' square-x';
-    if (value === 'O') classes += ' square-o';
-    return classes;
-  };
-
-  return (
-    <button
-      className={getSquareClasses()}
-      onClick={handleClick}
-      disabled={disabled && !value}
-      aria-label={`Square ${value || 'empty'}`}
-    >
-      {value}
-    </button>
   );
 };
 
