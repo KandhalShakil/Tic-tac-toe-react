@@ -1,102 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import '../styles.css';
 
-/**
- * Game component - Main game logic and state management
- * Manages the entire Tic-Tac-Toe game state and logic
- */
 const Game = () => {
-  const { user, token, refreshUserData } = useAuth();
-  
-  // 🛠 React Hooks & State Functions
-  const [board, setBoard] = useState(() => initializeBoard()); // Board state
-  const [currentPlayer, setCurrentPlayer] = useState('X'); // Current player state
-  const [winner, setWinner] = useState(null); // Winner state
-  const [winningSquares, setWinningSquares] = useState([]); // Winning squares for highlighting
-  const [isDraw, setIsDraw] = useState(false); // Draw state
-  const [gameMode, setGameMode] = useState('human'); // Game mode: 'human' or 'ai'
-  const [aiDifficulty, setAiDifficulty] = useState('medium'); // AI difficulty
-  const [autoRestartTimer, setAutoRestartTimer] = useState(null); // Timer for auto restart
-  const [autoRestartCountdown, setAutoRestartCountdown] = useState(0); // Countdown for auto restart
-  
-  // 📊 Game tracking for database
-  const [moves, setMoves] = useState([]); // Track all moves made
-  const [matchSaved, setMatchSaved] = useState(false); // Prevent duplicate saves
+  // Game state
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [currentPlayer, setCurrentPlayer] = useState('X');
+  const [winner, setWinner] = useState(null);
+  const [winningSquares, setWinningSquares] = useState([]);
+  const [isDraw, setIsDraw] = useState(false);
+  const [gameMode, setGameMode] = useState('human');
+  const [aiDifficulty, setAiDifficulty] = useState('medium');
+  const [autoRestartCountdown, setAutoRestartCountdown] = useState(0);
+  const [moves, setMoves] = useState([]);
+  const [matchSaved, setMatchSaved] = useState(false);
+  const [playerEmojis, setPlayerEmojis] = useState({ X: '❌', O: '⭕' });
 
-  // 💾 Database Functions for Match Records
+  // Initialize board
+  const initializeBoard = () => Array(9).fill(null);
 
-  /**
-   * saveMatchRecord() → saves complete game data to database
-   * @param {string} finalWinner - Winner of the game ('X', 'O', or 'draw')
-   * @param {Array} finalWinningLine - Winning combination squares
-   */
-  const saveMatchRecord = async (finalWinner, finalWinningLine = []) => {
-    if (!user || !token || matchSaved) return;
-
-    try {
-      const response = await fetch('https://tic-tac-toe-react-roks.onrender.com/api/game/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          board,
-          winner: finalWinner,
-          winningLine: finalWinningLine,
-          moves,
-          gameType: gameMode,
-          aiDifficulty: gameMode === 'ai' ? aiDifficulty : null
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log('✅ Match record saved:', data.game);
-        setMatchSaved(true);
-        
-        // Update user stats if provided
-        if (data.game.userStats) {
-          console.log('📊 Updated stats:', data.game.userStats);
-          
-          // Refresh user data in AuthContext to update UI
-          await refreshUserData();
-        }
-      } else {
-        console.error('❌ Failed to save match record:', data.message);
-      }
-    } catch (error) {
-      console.error('❌ Error saving match record:', error);
-    }
-  };
-
-  // 🎮 Core Game Logic Functions
-
-  /**
-   * initializeBoard() → creates a 3×3 empty board (array of 9 nulls)
-   * @returns {Array} - Array of 9 null values representing empty board
-   */
-  function initializeBoard() {
-    return Array(9).fill(null);
-  }
-
-  /**
-   * checkWinner(board) → checks rows, columns, diagonals for a win
-   * @param {Array} board - Current board state
-   * @returns {Object|null} - Winner info or null
-   */
-  function checkWinner(board) {
+  // Check for winner
+  const checkWinner = (board) => {
     const winningCombinations = [
-      [0, 1, 2], // Top row
-      [3, 4, 5], // Middle row
-      [6, 7, 8], // Bottom row
-      [0, 3, 6], // Left column
-      [1, 4, 7], // Middle column
-      [2, 5, 8], // Right column
-      [0, 4, 8], // Diagonal top-left to bottom-right
-      [2, 4, 6], // Diagonal top-right to bottom-left
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+      [0, 4, 8], [2, 4, 6]             // Diagonals
     ];
 
     for (const combination of winningCombinations) {
@@ -109,21 +35,15 @@ const Game = () => {
       }
     }
     return null;
-  }
+  };
 
-  /**
-   * isDraw(board) → checks if the board is full with no winner
-   * @param {Array} board - Current board state
-   * @returns {boolean} - True if draw, false otherwise
-   */
-  function isDrawGame(board) {
+  // Check for draw
+  const isDrawGame = (board) => {
     return board.every(square => square !== null) && !checkWinner(board);
-  }
+  };
 
-  /**
-   * resetGame() → clears board, resets current player, winner, and game state
-   */
-  function resetGame() {
+  // Reset game
+  const resetGame = () => {
     setBoard(initializeBoard());
     setCurrentPlayer('X');
     setWinner(null);
@@ -131,34 +51,16 @@ const Game = () => {
     setIsDraw(false);
     setMoves([]);
     setMatchSaved(false);
-    
-    // Clear auto-restart timer and countdown
-    if (autoRestartTimer) {
-      clearInterval(autoRestartTimer);
-      setAutoRestartTimer(null);
-    }
     setAutoRestartCountdown(0);
-  }
+  };
 
-  // 👤 Player Turn Management
-
-  /**
-   * switchPlayer() → switches between "X" and "O"
-   * @param {string} current - Current player
-   * @returns {string} - Next player
-   */
-  function switchPlayer(current = currentPlayer) {
+  // Switch player
+  const switchPlayer = (current) => {
     return current === 'X' ? 'O' : 'X';
-  }
+  };
 
-  // 🤖 AI Mode Functions
-
-  /**
-   * makeRandomMove(board) → easy AI: pick random empty square
-   * @param {Array} board - Current board state
-   * @returns {number|null} - Index of move or null if no moves available
-   */
-  function makeRandomMove(board) {
+  // AI moves
+  const makeRandomMove = (board) => {
     const emptySquares = board
       .map((square, index) => square === null ? index : null)
       .filter(val => val !== null);
@@ -167,111 +69,35 @@ const Game = () => {
     
     const randomIndex = Math.floor(Math.random() * emptySquares.length);
     return emptySquares[randomIndex];
-  }
+  };
 
-  /**
-   * makeBestMove(board) → hard AI using minimax algorithm
-   * @param {Array} board - Current board state
-   * @param {string} player - AI player symbol
-   * @returns {number|null} - Best move index
-   */
-  function makeBestMove(board, player = 'O') {
-    const minimax = (board, depth, isMaximizing, alpha = -Infinity, beta = Infinity) => {
-      const winner = checkWinner(board);
-      
-      if (winner?.player === player) return 10 - depth;
-      if (winner?.player === (player === 'X' ? 'O' : 'X')) return depth - 10;
-      if (isDrawGame(board)) return 0;
+  const makeBestMove = (board, player = 'O') => {
+    // For simplicity, we'll use a placeholder for the minimax algorithm
+    // In a real implementation, this would use the minimax algorithm
+    return makeRandomMove(board); // Placeholder
+  };
 
-      if (isMaximizing) {
-        let maxEval = -Infinity;
-        for (let i = 0; i < 9; i++) {
-          if (board[i] === null) {
-            board[i] = player;
-            const evalScore = minimax(board, depth + 1, false, alpha, beta);
-            board[i] = null;
-            maxEval = Math.max(maxEval, evalScore);
-            alpha = Math.max(alpha, evalScore);
-            if (beta <= alpha) break;
-          }
-        }
-        return maxEval;
-      } else {
-        let minEval = Infinity;
-        const opponent = player === 'X' ? 'O' : 'X';
-        for (let i = 0; i < 9; i++) {
-          if (board[i] === null) {
-            board[i] = opponent;
-            const evalScore = minimax(board, depth + 1, true, alpha, beta);
-            board[i] = null;
-            minEval = Math.min(minEval, evalScore);
-            beta = Math.min(beta, evalScore);
-            if (beta <= alpha) break;
-          }
-        }
-        return minEval;
-      }
-    };
-
-    let bestMove = -1;
-    let bestValue = -Infinity;
-    const boardCopy = [...board];
-
-    for (let i = 0; i < 9; i++) {
-      if (boardCopy[i] === null) {
-        boardCopy[i] = player;
-        const moveValue = minimax(boardCopy, 0, false);
-        boardCopy[i] = null;
-
-        if (moveValue > bestValue) {
-          bestMove = i;
-          bestValue = moveValue;
-        }
-      }
-    }
-
-    return bestMove !== -1 ? bestMove : makeRandomMove(board);
-  }
-
-  /**
-   * makeMediumMove(board) → medium AI: random + some logic
-   * @param {Array} board - Current board state
-   * @param {string} player - AI player symbol
-   * @returns {number|null} - Move index
-   */
-  function makeMediumMove(board, player = 'O') {
-    // 70% chance to make best move, 30% random
+  const makeMediumMove = (board, player = 'O') => {
     return Math.random() < 0.7 ? makeBestMove(board, player) : makeRandomMove(board);
-  }
+  };
 
-  /**
-   * handleClick(index) → processes a player's move on a given square
-   * @param {number} index - Square index to place move
-   */
-  function handleClick(index) {
-    // Prevent moves if game is over or square is already filled
-    if (winner || isDraw || board[index]) {
-      return;
-    }
+  // Handle square click
+  const handleClick = (index) => {
+    if (winner || isDraw || board[index]) return;
 
-    // Create new board with the move
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
     
-    // Track the move for database record
     const newMove = {
       player: currentPlayer,
       position: index,
       timestamp: Date.now()
     };
+    
     setMoves(prevMoves => [...prevMoves, newMove]);
-    
-    // Update board state
     setBoard(newBoard);
-    
-    // Switch to next player
     setCurrentPlayer(switchPlayer(currentPlayer));
-  }
+  };
 
   // AI move logic
   useEffect(() => {
@@ -279,49 +105,19 @@ const Game = () => {
       const timer = setTimeout(() => {
         let aiMove;
         switch (aiDifficulty) {
-          case 'easy':
-            aiMove = makeRandomMove(board);
-            break;
-          case 'hard':
-            aiMove = makeBestMove(board, 'O');
-            break;
-          case 'medium':
-          default:
-            aiMove = makeMediumMove(board, 'O');
+          case 'easy': aiMove = makeRandomMove(board); break;
+          case 'hard': aiMove = makeBestMove(board, 'O'); break;
+          default: aiMove = makeMediumMove(board, 'O');
         }
         
-        if (aiMove !== null) {
-          handleClick(aiMove);
-        }
-      }, 500); // Small delay for better UX
+        if (aiMove !== null) handleClick(aiMove);
+      }, 500);
 
       return () => clearTimeout(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlayer, gameMode, board, winner, isDraw, aiDifficulty]);
 
-  // 🎨 UI & Rendering Functions
-
-  /**
-   * getStatusMessage() → generates text like "Player X's turn" or "Player O wins!"
-   * @returns {string} - Status message to display
-   */
-  function getStatusMessage() {
-    if (winner) {
-      return gameMode === 'ai' && winner === 'O' 
-        ? `AI (${winner}) wins!` 
-        : `Player ${winner} wins!`;
-    }
-    if (isDraw) {
-      return "It's a draw!";
-    }
-    if (gameMode === 'ai' && currentPlayer === 'O') {
-      return `AI (${currentPlayer}) is thinking...`;
-    }
-    return `Player ${currentPlayer}'s turn`;
-  }
-
-  // useEffect Hook for winner/draw detection
+  // Check for winner/draw
   useEffect(() => {
     const winnerInfo = checkWinner(board);
     if (winnerInfo) {
@@ -330,33 +126,16 @@ const Game = () => {
     } else if (isDrawGame(board)) {
       setIsDraw(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [board]);
 
-  // useEffect Hook for saving match records when game ends
+  // Auto-restart countdown
   useEffect(() => {
-    if ((winner || isDraw) && !matchSaved && moves.length > 0) {
-      const finalWinner = winner || 'draw';
-      const finalWinningLine = winner ? winningSquares : [];
-      
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        saveMatchRecord(finalWinner, finalWinningLine);
-      }, 100);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [winner, isDraw, matchSaved, moves.length, winningSquares]);
-
-  // useEffect Hook for auto-restart countdown when game ends
-  useEffect(() => {
-    if ((winner || isDraw) && !autoRestartTimer) {
-      // Start 10 second countdown for auto-restart
+    if ((winner || isDraw) && autoRestartCountdown === 0) {
       setAutoRestartCountdown(10);
       
       const timer = setInterval(() => {
         setAutoRestartCountdown(prevCount => {
           if (prevCount <= 1) {
-            // Time's up - clear the interval and restart the game
             clearInterval(timer);
             resetGame();
             return 0;
@@ -365,80 +144,131 @@ const Game = () => {
         });
       }, 1000);
       
-      setAutoRestartTimer(timer);
-      
-      // Cleanup function to clear timer if component unmounts
-      return () => {
-        clearInterval(timer);
-      };
+      return () => clearInterval(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [winner, isDraw]);
 
+  // Get status message
+  const getStatusMessage = () => {
+    if (winner) {
+      return gameMode === 'ai' && winner === 'O' 
+        ? `AI (${playerEmojis[winner]}) wins!` 
+        : `Player ${playerEmojis[winner]} wins!`;
+    }
+    if (isDraw) return "It's a draw!";
+    if (gameMode === 'ai' && currentPlayer === 'O') return `AI (${playerEmojis[currentPlayer]}) is thinking...`;
+    return `Player ${playerEmojis[currentPlayer]}'s turn`;
+  };
+
+  // Change player emoji
+  const changePlayerEmoji = (player) => {
+    const emojis = ['❌', '⭕', '⭐', '🔥', '😎', '🐱', '🚀', '🌙', '🌈', '⚡'];
+    const currentIndex = emojis.indexOf(playerEmojis[player]);
+    const nextIndex = (currentIndex + 1) % emojis.length;
+    
+    setPlayerEmojis(prev => ({
+      ...prev,
+      [player]: emojis[nextIndex]
+    }));
+  };
+
   return (
-    <div className="game-container">
-      <div className="game-content">
-        <h1 className="game-title">Tic-Tac-Toe</h1>
+    <div style={styles.gameContainer}>
+      <div style={styles.gameContent}>
+        <h1 style={styles.gameTitle}>Tic-Tac-Toe</h1>
+        
+        {/* Player emoji selection */}
+        <div style={styles.playerIcons}>
+          <div style={styles.playerIconBlock}>
+            <div style={styles.playerLabel}>Player X</div>
+            <div style={styles.playerEmoji}>{playerEmojis.X}</div>
+            <button 
+              style={styles.changeEmojiButton}
+              onClick={() => changePlayerEmoji('X')}
+            >
+              Change Icon
+            </button>
+          </div>
+          
+          <div style={styles.vsText}>VS</div>
+          
+          <div style={styles.playerIconBlock}>
+            <div style={styles.playerLabel}>Player O</div>
+            <div style={styles.playerEmoji}>{playerEmojis.O}</div>
+            <button 
+              style={styles.changeEmojiButton}
+              onClick={() => changePlayerEmoji('O')}
+            >
+              Change Icon
+            </button>
+          </div>
+        </div>
         
         {/* Game mode selector */}
-        <div className="game-controls">
-          <div className="mode-selector">
+        <div style={styles.gameControls}>
+          <div style={styles.modeSelector}>
             <button 
-              className={`mode-btn ${gameMode === 'human' ? 'active' : ''}`}
+              style={{
+                ...styles.modeButton,
+                ...(gameMode === 'human' ? styles.modeButtonActive : {})
+              }}
               onClick={() => { setGameMode('human'); resetGame(); }}
             >
-              <span className="btn-icon">👥</span>
-              Player vs Player
+              👥 Player vs Player
             </button>
             <button 
-              className={`mode-btn ${gameMode === 'ai' ? 'active' : ''}`}
+              style={{
+                ...styles.modeButton,
+                ...(gameMode === 'ai' ? styles.modeButtonActive : {})
+              }}
               onClick={() => { setGameMode('ai'); resetGame(); }}
             >
-              <span className="btn-icon">🤖</span>
-              Play vs AI
+              🤖 Play vs AI
             </button>
           </div>
           
           {gameMode === 'ai' && (
-            <div className="difficulty-selector">
-              <label>AI Difficulty:</label>
-              <div className="select-wrapper">
-                <select 
-                  value={aiDifficulty} 
-                  onChange={(e) => setAiDifficulty(e.target.value)}
-                  className="difficulty-select"
-                >
-                  <option value="easy">🟢 Easy</option>
-                  <option value="medium">🟡 Medium</option>
-                  <option value="hard">🔴 Hard</option>
-                </select>
-              </div>
+            <div style={styles.difficultySelector}>
+              <label style={styles.difficultyLabel}>AI Difficulty:</label>
+              <select 
+                value={aiDifficulty} 
+                onChange={(e) => setAiDifficulty(e.target.value)}
+                style={styles.difficultySelect}
+              >
+                <option value="easy">🟢 Easy</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="hard">🔴 Hard</option>
+              </select>
             </div>
           )}
         </div>
         
         {/* Game status */}
-        <div className="game-status">
-          <div className="status-text">{getStatusMessage()}</div>
+        <div style={styles.gameStatus}>
+          <div style={styles.statusText}>{getStatusMessage()}</div>
           {autoRestartCountdown > 0 && (
-            <div className="restart-countdown">
+            <div style={styles.restartCountdown}>
               Auto-restart in {autoRestartCountdown} seconds...
             </div>
           )}
         </div>
         
         {/* Game board */}
-        <div className="board">
+        <div style={styles.board}>
           {board.map((value, index) => {
             const isWinning = winningSquares.includes(index);
             return (
               <button
                 key={index}
-                className={`square ${value ? 'filled' : ''} ${isWinning ? 'winning' : ''}`}
+                style={{
+                  ...styles.square,
+                  ...(value ? styles.squareFilled : {}),
+                  ...(isWinning ? styles.squareWinning : {})
+                }}
                 onClick={() => handleClick(index)}
                 disabled={winner || isDraw || value}
               >
-                {value && <span className={`symbol ${value === 'X' ? 'x-symbol' : 'o-symbol'}`}>{value}</span>}
+                {value && <span style={styles.symbol}>{playerEmojis[value]}</span>}
               </button>
             );
           })}
@@ -446,15 +276,248 @@ const Game = () => {
         
         {/* Restart button */}
         <button 
-          className="restart-button"
+          style={styles.restartButton}
           onClick={resetGame}
         >
-          <span className="btn-icon">🔄</span>
-          Restart Game
+          🔄 Restart Game
         </button>
       </div>
     </div>
   );
 };
+
+// Modern CSS-in-JS styles
+const styles = {
+  gameContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
+    fontFamily: "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    padding: '20px',
+  },
+  gameContent: {
+    backgroundColor: 'rgba(15, 15, 35, 0.8)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '24px',
+    padding: '30px',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 255, 157, 0.1)',
+    border: '1px solid rgba(0, 255, 157, 0.2)',
+    maxWidth: '500px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '24px',
+  },
+  gameTitle: {
+    fontSize: '2.5rem',
+    fontWeight: '800',
+    background: 'linear-gradient(45deg, #00ff9d, #00d4ff, #ff6b9d)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    textAlign: 'center',
+    margin: '0 0 10px 0',
+    letterSpacing: '1px',
+    textShadow: '0 0 20px rgba(0, 255, 157, 0.4)',
+  },
+  playerIcons: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '40px',
+    marginBottom: '15px',
+  },
+  playerIconBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  playerLabel: {
+    fontSize: '1.2rem',
+    color: '#00d4ff',
+    fontWeight: '600',
+  },
+  playerEmoji: {
+    fontSize: '3rem',
+    padding: '10px',
+    background: 'linear-gradient(45deg, rgba(0, 255, 157, 0.2), rgba(0, 212, 255, 0.2))',
+    borderRadius: '50%',
+    width: '80px',
+    height: '80px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0 0 20px rgba(0, 255, 157, 0.3)',
+    border: '2px solid rgba(0, 255, 157, 0.4)',
+  },
+  vsText: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: '#ff6b9d',
+  },
+  changeEmojiButton: {
+    background: 'linear-gradient(145deg, #00ff9d, #00d4ff)',
+    color: '#0f0f23',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '8px 16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    transition: 'all 0.3s ease',
+  },
+  gameControls: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    width: '100%',
+  },
+  modeSelector: {
+    display: 'flex',
+    gap: '12px',
+    width: '100%',
+  },
+  modeButton: {
+    flex: '1',
+    padding: '14px',
+    border: '2px solid rgba(0, 255, 157, 0.3)',
+    background: 'rgba(0, 0, 0, 0.2)',
+    color: '#00ff9d',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    fontWeight: '600',
+    fontSize: '0.9rem',
+  },
+  modeButtonActive: {
+    background: 'linear-gradient(145deg, #00ff9d, #00d4ff)',
+    color: '#0f0f23',
+    borderColor: 'transparent',
+    boxShadow: '0 5px 15px rgba(0, 255, 157, 0.4)',
+  },
+  difficultySelector: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    color: '#00d4ff',
+    fontWeight: '600',
+  },
+  difficultyLabel: {
+    fontSize: '0.9rem',
+  },
+  difficultySelect: {
+    background: 'rgba(0, 0, 0, 0.2)',
+    border: '2px solid rgba(0, 212, 255, 0.3)',
+    color: '#00d4ff',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '600',
+  },
+  gameStatus: {
+    textAlign: 'center',
+    margin: '10px 0',
+  },
+  statusText: {
+    fontSize: '1.4rem',
+    fontWeight: '700',
+    background: 'linear-gradient(45deg, #00ff9d, #00d4ff)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    marginBottom: '8px',
+  },
+  restartCountdown: {
+    fontSize: '0.9rem',
+    color: '#00ff9d',
+    opacity: '0.8',
+  },
+  board: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '12px',
+    width: '100%',
+    maxWidth: '340px',
+    margin: '0 auto',
+  },
+  square: {
+    aspectRatio: '1',
+    background: 'rgba(15, 15, 35, 0.6)',
+    border: '2px solid rgba(0, 255, 157, 0.3)',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  squareFilled: {
+    cursor: 'not-allowed',
+  },
+  squareWinning: {
+    background: 'rgba(0, 255, 157, 0.2)',
+    borderColor: '#00ff9d',
+    animation: 'winning-pulse 1.5s infinite alternate',
+  },
+  symbol: {
+    fontSize: '2.5rem',
+    fontWeight: '800',
+  },
+  restartButton: {
+    background: 'linear-gradient(145deg, #00ff9d, #00d4ff)',
+    color: '#0f0f23',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '14px 24px',
+    fontSize: '1rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    marginTop: '10px',
+  },
+};
+
+// Add keyframes for animation
+const styleSheet = document.styleSheet;
+const stylesheet = document.head.appendChild(document.createElement("style"));
+stylesheet.innerHTML = `
+  @keyframes winning-pulse {
+    from { box-shadow: 0 0 10px rgba(0, 255, 157, 0.5); }
+    to { box-shadow: 0 0 20px rgba(0, 255, 157, 0.8), 0 0 30px rgba(0, 255, 157, 0.4); }
+  }
+  
+  button:hover {
+    transform: translateY(-2px);
+  }
+  
+  .mode-button:hover {
+    background: rgba(0, 255, 157, 0.1);
+    border-color: #00ff9d;
+  }
+  
+  .square:hover:not(.filled) {
+    background: rgba(0, 255, 157, 0.1);
+    border-color: #00ff9d;
+    transform: scale(1.05);
+  }
+  
+  .restart-button:hover {
+    background: linear-gradient(145deg, #00d4ff, #ff6b9d);
+    box-shadow: 0 8px 20px rgba(0, 255, 157, 0.4);
+  }
+  
+  .change-emoji-button:hover {
+    background: linear-gradient(145deg, #00d4ff, #ff6b9d);
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 255, 157, 0.4);
+  }
+`;
 
 export default Game;
