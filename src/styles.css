@@ -381,12 +381,6 @@ body {
   background: linear-gradient(45deg, #00ff9d, #00d4ff, #ff6b9d, #00ff9d);
   border-radius: 25px;
   z-index: -1;
-  animation: borderRotate 4s linear infinite;
-}
-
-@keyframes borderRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* Individual squares */
