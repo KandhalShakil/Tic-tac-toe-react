@@ -1,0 +1,544 @@
+/* Auth.css - Authentication components styling */
+
+/* Modal overlay */
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+/* Modal container */
+.auth-modal {
+  background: linear-gradient(145deg, #1e1e3f 0%, #2a2a4a 100%);
+  border-radius: 25px;
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Close button */
+.auth-modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #64ffda;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-modal-close:hover {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  transform: rotate(90deg);
+}
+
+/* Header */
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-header h2 {
+  color: #64ffda;
+  font-size: 2rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 20px rgba(100, 255, 218, 0.5);
+  background: linear-gradient(45deg, #64ffda, #bb86fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-header p {
+  color: #b0b0b0;
+  font-size: 1rem;
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Form groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #64ffda;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+/* Input fields */
+.form-group input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #ffffff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-group input:focus {
+  border-color: #64ffda;
+  background: rgba(100, 255, 218, 0.1);
+  box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.2);
+}
+
+.form-group input.error {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.form-group input.error:focus {
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+}
+
+/* Password input container */
+.password-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input input {
+  flex: 1;
+  padding-right: 50px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #64ffda;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+  font-size: 1.2rem;
+}
+
+.password-toggle:hover {
+  background: rgba(100, 255, 218, 0.2);
+}
+
+/* Error messages */
+.error-message {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.error-message::before {
+  content: '⚠️';
+  font-size: 0.8rem;
+}
+
+/* Auth error */
+.auth-error {
+  background: rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  color: #ff6b6b;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Submit button */
+.auth-submit {
+  background: linear-gradient(45deg, #64ffda, #bb86fc);
+  color: #000;
+  border: none;
+  border-radius: 15px;
+  padding: 15px 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-submit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.auth-submit:hover::before {
+  left: 100%;
+}
+
+.auth-submit:hover {
+  background: linear-gradient(45deg, #bb86fc, #64ffda);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(100, 255, 218, 0.4);
+}
+
+.auth-submit:active {
+  transform: translateY(0);
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-submit:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Footer */
+.auth-footer {
+  text-align: center;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-footer p {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}
+
+.auth-switch {
+  background: none;
+  border: none;
+  color: #64ffda;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 5px;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.auth-switch:hover {
+  color: #bb86fc;
+}
+
+/* User profile component - Modern Gaming Design */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  background: linear-gradient(145deg, rgba(15, 15, 35, 0.95), rgba(30, 30, 60, 0.9));
+  padding: 25px 35px;
+  border-radius: 30px;
+  border: 3px solid rgba(0, 255, 157, 0.3);
+  margin-bottom: 30px;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 255, 157, 0.1),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1),
+    0 0 40px rgba(0, 255, 157, 0.15);
+  backdrop-filter: blur(20px);
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 35px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+
+.user-profile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 157, 0.1), transparent);
+  transition: left 0.8s;
+}
+
+.user-profile:hover::before {
+  left: 100%;
+}
+
+.user-profile:hover {
+  transform: translateY(-5px);
+  border-color: #00ff9d;
+  box-shadow: 
+    0 30px 70px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 255, 157, 0.2),
+    inset 0 2px 0 rgba(255, 255, 255, 0.15),
+    0 0 60px rgba(0, 255, 157, 0.25);
+}
+
+.user-avatar {
+  font-size: 2.8rem;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #00ff9d, #00d4ff);
+  border-radius: 50%;
+  color: #0f0f23;
+  box-shadow: 
+    0 0 30px rgba(0, 255, 157, 0.4),
+    0 0 60px rgba(0, 255, 157, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 
+    0 0 40px rgba(0, 255, 157, 0.6),
+    0 0 80px rgba(0, 255, 157, 0.3);
+}
+
+.user-info {
+  flex: 1;
+  z-index: 1;
+  position: relative;
+}
+
+.user-info h3 {
+  color: #00ff9d;
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
+}
+
+.user-info p {
+  color: #00d4ff;
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.user-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  background: linear-gradient(145deg, rgba(0, 255, 157, 0.1), rgba(0, 212, 255, 0.05));
+  border: 2px solid rgba(0, 255, 157, 0.2);
+  padding: 15px 12px;
+  border-radius: 18px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 157, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.stat-item:hover::before {
+  left: 100%;
+}
+
+.stat-item:hover {
+  transform: translateY(-3px);
+  border-color: #00ff9d;
+  box-shadow: 0 10px 25px rgba(0, 255, 157, 0.2);
+}
+
+.stat-value {
+  color: #00ff9d;
+  font-weight: 900;
+  font-size: 1.8rem;
+  margin-bottom: 5px;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.stat-label {
+  color: #00d4ff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 1;
+}
+
+.logout-button {
+  background: linear-gradient(145deg, #ff6b9d, #ff3366);
+  color: #0f0f23;
+  border: none;
+  border-radius: 20px;
+  padding: 15px 25px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.logout-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(255, 107, 157, 0.4);
+  background: linear-gradient(145deg, #ff3366, #ff1744);
+}
+
+/* Responsive design for user profile */
+@media (max-width: 768px) {
+  .user-profile {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+    padding: 20px 25px;
+    margin-bottom: 25px;
+  }
+  
+  .user-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 2.4rem;
+  }
+  
+  .user-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  
+  .stat-item {
+    padding: 12px 10px;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .logout-button {
+    padding: 12px 20px;
+    font-size: 1rem;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .auth-modal {
+    padding: 25px;
+    margin: 10px;
+    border-radius: 20px;
+  }
+  
+  .auth-header h2 {
+    font-size: 1.6rem;
+  }
+  
+  .form-group input {
+    padding: 10px 14px;
+    font-size: 0.95rem;
+  }
+  
+  .auth-submit {
+    padding: 12px 20px;
+    font-size: 1rem;
+  }
+  
+  .user-profile {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 15px;
+  }
+  
+  .user-avatar {
+    margin-bottom: 10px;
+  }
+  
+  .logout-button {
+    margin: 15px auto 0;
+  }
+  
+  .user-stats {
+    margin-top: 15px;
+  }
+}

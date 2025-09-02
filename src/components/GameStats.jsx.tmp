@@ -1,0 +1,368 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import './GameStats.css';
+
+// Debounce function to prevent excessive API calls
+const useDebounce = (callback, delay) => {
+  const timeoutRef = useRef(null);
+  
+  return (...args) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+};
+
+const GameStats = () => {
+  const { user, token } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [gameHistory, setGameHistory] = useState([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState('summary');
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [resultFilter, setResultFilter] = useState('all');
+  const [lastFetched, setLastFetched] = useState(0);
+  const MIN_FETCH_INTERVAL = 10000; // 10 seconds minimum between fetches
+
+  useEffect(() => {
+    const initializeData = async () => {
+      if (user && token) {
+        // Initial load of data
+        fetchDataWithThrottling();
+      }
+    };
+    
+    initializeData();
+    
+    // Set up a refresh interval (every 30 seconds) instead of refreshing continuously
+    const refreshInterval = setInterval(() => {
+      if (user && token) {
+        fetchDataWithThrottling();
+      }
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(refreshInterval); // Clean up interval on unmount
+  }, [user, token]);
+  
+  // Throttled data fetching
+  const fetchDataWithThrottling = () => {
+    const now = Date.now();
+    if (now - lastFetched > MIN_FETCH_INTERVAL) {
+      loadStats();
+      loadGameHistory(historyPage);
+      setLastFetched(now);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/game/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache' // Prevent browser caching
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      } else {
+        setError(data.message || 'Failed to load statistics');
+      }
+    } catch (err) {
+      setError('Error loading statistics. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadGameHistory = async (page = 1, filters = {}) => {
+    try {
+      setLoading(true);
+      
+      // Build query string from filters
+      const queryParams = new URLSearchParams({
+        page,
+        limit: 5,
+        ...(filters.gameType && { gameType: filters.gameType }),
+        ...(filters.result && { result: filters.result }),
+        // Add a timestamp to prevent caching
+        _t: Date.now()
+      });
+      
+      const response = await fetch(`http://localhost:5000/api/game/history?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setGameHistory(data.games);
+        setHistoryPage(data.pagination.page);
+        setTotalPages(data.pagination.totalPages);
+      } else {
+        setError(data.message || 'Failed to load game history');
+      }
+    } catch (err) {
+      setError('Error loading game history. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Debounced filter application
+  const debouncedApplyFilters = useDebounce(() => {
+    const filters = {
+      ...(difficultyFilter !== 'all' && { gameType: difficultyFilter }),
+      ...(resultFilter !== 'all' && { result: resultFilter })
+    };
+    loadGameHistory(1, filters);
+  }, 500);
+
+  const applyFilters = () => {
+    debouncedApplyFilters();
+  };
+
+  // Debounced page change
+  const debouncedPageChange = useDebounce((newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      const filters = {
+        ...(difficultyFilter !== 'all' && { gameType: difficultyFilter }),
+        ...(resultFilter !== 'all' && { result: resultFilter })
+      };
+      loadGameHistory(newPage, filters);
+    }
+  }, 300);
+
+  const handlePageChange = (newPage) => {
+    setHistoryPage(newPage); // Update UI immediately
+    debouncedPageChange(newPage);
+  };
+  
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  const renderSummaryTab = () => {
+    if (!stats) return <div className="stats-loading">Loading stats...</div>;
+    
+    return (
+      <>
+        {/* Basic stats */}
+        <div className="stats-summary-section">
+          <h3>Overall Performance</h3>
+          <div className="stats-cards">
+            <div className="stats-card">
+              <div className="stat-value">{stats.detailed.totalGames}</div>
+              <div className="stat-label">Total Games</div>
+            </div>
+            <div className="stats-card">
+              <div className="stat-value">{stats.detailed.wins}</div>
+              <div className="stat-label">Wins</div>
+            </div>
+            <div className="stats-card">
+              <div className="stat-value">{stats.detailed.losses}</div>
+              <div className="stat-label">Losses</div>
+            </div>
+            <div className="stats-card">
+              <div className="stat-value">{stats.detailed.draws}</div>
+              <div className="stat-label">Draws</div>
+            </div>
+            <div className="stats-card highlight">
+              <div className="stat-value">{stats.detailed.winRate}%</div>
+              <div className="stat-label">Win Rate</div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI stats */}
+        <div className="stats-summary-section">
+          <h3>AI Performance</h3>
+          <div className="stats-cards">
+            {Object.entries(stats.aiPerformance).map(([difficulty, data]) => (
+              <div className="stats-card ai-card" key={difficulty}>
+                <div className="stat-difficulty">
+                  {difficulty === 'easy' ? '🟢 Easy' : 
+                   difficulty === 'medium' ? '🟡 Medium' : '🔴 Hard'}
+                </div>
+                <div className="stat-value">{data.winRate}%</div>
+                <div className="stat-label">Win Rate</div>
+                <div className="stat-detail">
+                  <span>{data.wins} W</span> / <span>{data.total} G</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Recent form */}
+        <div className="stats-summary-section">
+          <h3>Recent Form</h3>
+          <div className="recent-form">
+            {stats.recentForm.map((result, index) => (
+              <div 
+                key={index}
+                className={`form-indicator ${result}`}
+                title={result.charAt(0).toUpperCase() + result.slice(1)}
+              >
+                {result === 'win' ? 'W' : 
+                 result === 'lose' ? 'L' : 'D'}
+              </div>
+            ))}
+            {stats.recentForm.length === 0 && (
+              <div className="no-games">No recent games</div>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderHistoryTab = () => {
+    return (
+      <>
+        <div className="filter-controls">
+          <div className="filter-group">
+            <label>Game Type:</label>
+            <select 
+              value={difficultyFilter} 
+              onChange={(e) => {
+                setDifficultyFilter(e.target.value);
+                applyFilters();
+              }}
+            >
+              <option value="all">All Games</option>
+              <option value="ai">AI Games</option>
+              <option value="human">Human Games</option>
+            </select>
+          </div>
+          
+          <div className="filter-group">
+            <label>Result:</label>
+            <select 
+              value={resultFilter} 
+              onChange={(e) => {
+                setResultFilter(e.target.value);
+                applyFilters();
+              }}
+            >
+              <option value="all">All Results</option>
+              <option value="win">Wins</option>
+              <option value="lose">Losses</option>
+              <option value="draw">Draws</option>
+            </select>
+          </div>
+        </div>
+
+        {gameHistory.length === 0 ? (
+          <div className="no-history">No games found matching your filters.</div>
+        ) : (
+          <>
+            <div className="game-history-list">
+              {gameHistory.map(game => (
+                <div className="game-history-item" key={game._id}>
+                  <div className="game-history-type">
+                    {game.gameType === 'ai' ? (
+                      <span>🤖 AI {game.aiDifficulty && `(${game.aiDifficulty})`}</span>
+                    ) : (
+                      <span>👤 Human</span>
+                    )}
+                  </div>
+                  <div className="game-history-result">
+                    <span className={`result-badge ${game.userResult}`}>
+                      {game.userResult === 'win' ? 'Victory' : 
+                       game.userResult === 'lose' ? 'Defeat' : 'Draw'}
+                    </span>
+                  </div>
+                  <div className="game-history-date">
+                    {formatDate(game.completedAt)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button 
+                  disabled={historyPage === 1}
+                  onClick={() => handlePageChange(historyPage - 1)}
+                  className="pagination-btn"
+                >
+                  ← Prev
+                </button>
+                <span className="page-indicator">
+                  Page {historyPage} of {totalPages}
+                </span>
+                <button 
+                  disabled={historyPage === totalPages}
+                  onClick={() => handlePageChange(historyPage + 1)}
+                  className="pagination-btn"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <div className="game-stats-container">
+      {/* Loading overlay that only shows during data refresh */}
+      <div className={`loading-overlay ${loading ? 'visible' : ''}`}>
+        <div className="loading-spinner">
+          <span role="img" aria-label="loading">🔄</span>
+        </div>
+      </div>
+      
+      <h2>Your Game Statistics</h2>
+      
+      <div className="stats-tabs">
+        <button 
+          className={activeTab === 'summary' ? 'active' : ''} 
+          onClick={() => setActiveTab('summary')}
+        >
+          Summary
+        </button>
+        <button 
+          className={activeTab === 'history' ? 'active' : ''} 
+          onClick={() => setActiveTab('history')}
+        >
+          Game History
+        </button>
+      </div>
+      
+      <div className="stats-content stable-content">
+        {error ? (
+          <div className="stats-error">{error}</div>
+        ) : (
+          activeTab === 'summary' ? renderSummaryTab() : renderHistoryTab()
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default GameStats;
