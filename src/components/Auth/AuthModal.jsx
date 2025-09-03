@@ -19,6 +19,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const { login, register, loading, error, clearError } = useAuth();
 
@@ -108,6 +109,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const handleOtpChange = (e) => {
     setOtp(e.target.value);
     if (otpError) setOtpError('');
+  };
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
   };
 
   // Validate form data
@@ -256,7 +262,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
   if (!isOpen) return null;
 
-  // Inline styles
+  // Inline styles with dark mode support
   const styles = {
     overlay: {
       position: 'fixed',
@@ -264,20 +270,21 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.7)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000,
     },
     modal: {
-      backgroundColor: 'white',
+      backgroundColor: darkMode ? '#1a1a1a' : 'white',
       borderRadius: '12px',
       padding: '24px',
       width: '90%',
       maxWidth: '400px',
       position: 'relative',
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+      boxShadow: darkMode ? '0 10px 25px rgba(0, 0, 0, 0.4)' : '0 10px 25px rgba(0, 0, 0, 0.2)',
+      border: darkMode ? '1px solid #333' : 'none',
     },
     closeButton: {
       position: 'absolute',
@@ -287,7 +294,17 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       border: 'none',
       fontSize: '20px',
       cursor: 'pointer',
-      color: '#666',
+      color: darkMode ? '#aaa' : '#666',
+    },
+    themeToggle: {
+      position: 'absolute',
+      top: '12px',
+      left: '12px',
+      background: 'none',
+      border: 'none',
+      fontSize: '20px',
+      cursor: 'pointer',
+      color: darkMode ? '#ffcc00' : '#666',
     },
     header: {
       textAlign: 'center',
@@ -297,11 +314,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       margin: '0 0 8px 0',
       fontSize: '24px',
       fontWeight: 'bold',
-      color: '#333',
+      color: darkMode ? '#fff' : '#333',
     },
     headerSubtitle: {
       margin: 0,
-      color: '#666',
+      color: darkMode ? '#aaa' : '#666',
       fontSize: '14px',
     },
     formGroup: {
@@ -311,15 +328,17 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       display: 'block',
       marginBottom: '6px',
       fontWeight: '500',
-      color: '#333',
+      color: darkMode ? '#ddd' : '#333',
     },
     input: {
       width: '100%',
       padding: '10px 12px',
-      border: '1px solid #ddd',
+      border: darkMode ? '1px solid #444' : '1px solid #ddd',
       borderRadius: '6px',
       fontSize: '14px',
       boxSizing: 'border-box',
+      backgroundColor: darkMode ? '#2a2a2a' : 'white',
+      color: darkMode ? '#fff' : '#333',
     },
     inputError: {
       borderColor: '#e74c3c',
@@ -335,6 +354,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       border: 'none',
       cursor: 'pointer',
       fontSize: '16px',
+      color: darkMode ? '#aaa' : '#666',
     },
     errorMessage: {
       color: '#e74c3c',
@@ -343,7 +363,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       display: 'block',
     },
     authError: {
-      backgroundColor: '#ffe6e6',
+      backgroundColor: darkMode ? '#442222' : '#ffe6e6',
       color: '#e74c3c',
       padding: '10px',
       borderRadius: '6px',
@@ -353,7 +373,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     submitButton: {
       width: '100%',
       padding: '12px',
-      backgroundColor: '#4a6cfa',
+      backgroundColor: darkMode ? '#5a7eff' : '#4a6cfa',
       color: 'white',
       border: 'none',
       borderRadius: '6px',
@@ -361,27 +381,31 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       fontWeight: 'bold',
       cursor: 'pointer',
       marginTop: '8px',
+      transition: 'background-color 0.2s',
+    },
+    submitButtonHover: {
+      backgroundColor: darkMode ? '#6b8aff' : '#5b7aff',
     },
     submitButtonDisabled: {
-      backgroundColor: '#b0b0b0',
+      backgroundColor: darkMode ? '#3a3a3a' : '#b0b0b0',
       cursor: 'not-allowed',
     },
     footer: {
       textAlign: 'center',
       marginTop: '20px',
       fontSize: '14px',
-      color: '#666',
+      color: darkMode ? '#aaa' : '#666',
     },
     switchButton: {
       background: 'none',
       border: 'none',
-      color: '#4a6cfa',
+      color: darkMode ? '#8ba1ff' : '#4a6cfa',
       cursor: 'pointer',
       textDecoration: 'underline',
       marginLeft: '5px',
     },
     completeRegistrationButton: {
-      backgroundColor: '#4caf50',
+      backgroundColor: darkMode ? '#3a9b50' : '#4caf50',
       marginTop: '15px',
     },
     otpModal: {
@@ -395,6 +419,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
           <button style={styles.closeButton} onClick={handleClose}>
             ✕
+          </button>
+          <button style={styles.themeToggle} onClick={toggleDarkMode}>
+            {darkMode ? '☀️' : '🌙'}
           </button>
           
           <div style={styles.header}>
@@ -515,9 +542,19 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
               type="submit" 
               style={{
                 ...styles.submitButton,
-                ...(loading || otpLoading ? styles.submitButtonDisabled : {})
+                ...(loading || otpLoading ? styles.submitButtonDisabled : {}),
               }}
               disabled={loading || otpLoading}
+              onMouseOver={(e) => {
+                if (!loading && !otpLoading) {
+                  e.target.style.backgroundColor = darkMode ? '#6b8aff' : '#5b7aff';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!loading && !otpLoading) {
+                  e.target.style.backgroundColor = darkMode ? '#5a7eff' : '#4a6cfa';
+                }
+              }}
             >
               {loading || otpLoading ? (
                 <span>⏳ Processing...</span>
@@ -530,7 +567,16 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           {mode === 'register' && otpVerified && (
             <button 
               onClick={completeRegistration}
-              style={{...styles.submitButton, ...styles.completeRegistrationButton}}
+              style={{
+                ...styles.submitButton,
+                ...styles.completeRegistrationButton,
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = darkMode ? '#4bb466' : '#45a049';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = darkMode ? '#3a9b50' : '#4caf50';
+              }}
             >
               🎉 Complete Registration
             </button>
@@ -587,6 +633,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             <button 
               onClick={verifyOtp}
               style={styles.submitButton}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = darkMode ? '#6b8aff' : '#5b7aff';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = darkMode ? '#5a7eff' : '#4a6cfa';
+              }}
             >
               Verify Code
             </button>
