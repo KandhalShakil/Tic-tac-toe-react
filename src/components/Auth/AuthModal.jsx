@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import emailjs from '@emailjs/browser';
 import './Auth.css';
 
 const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
@@ -19,6 +18,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const { login, register, loading, error, clearError } = useAuth();
 
@@ -29,22 +29,41 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     return newOtp;
   };
 
-  // Send OTP via EmailJS
+  // Send OTP via EmailJS using fetch API
   const sendOtp = async (email) => {
+    setOtpLoading(true);
     const newOtp = generateOtp();
     
     try {
-      await emailjs.send("service_emks25r", "template_h8r9vlo", {
-        passcode: newOtp,
-        email: email,
-      }, "HiT1qgF3NG4BIwyQY");
-      
-      console.log("✅ OTP sent successfully!");
-      setShowOtpModal(true);
-      return true;
+      // Using EmailJS API directly with fetch
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          service_id: 'service_emks25r',
+          template_id: 'template_h8r9vlo',
+          user_id: 'HiT1qgF3NG4BIwyQY',
+          template_params: {
+            passcode: newOtp,
+            email: email,
+          }
+        })
+      });
+
+      if (response.ok) {
+        console.log("✅ OTP sent successfully!");
+        setShowOtpModal(true);
+        setOtpLoading(false);
+        return true;
+      } else {
+        throw new Error('Failed to send OTP');
+      }
     } catch (err) {
       console.error("❌ Failed to send OTP:", err);
       setOtpError('Failed to send OTP. Please try again.');
+      setOtpLoading(false);
       return false;
     }
   };
@@ -496,11 +515,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
               type="submit" 
               style={{
                 ...styles.submitButton,
-                ...(loading ? styles.submitButtonDisabled : {})
+                ...(loading || otpLoading ? styles.submitButtonDisabled : {})
               }}
-              disabled={loading}
+              disabled={loading || otpLoading}
             >
-              {loading ? (
+              {loading || otpLoading ? (
                 <span>⏳ Processing...</span>
               ) : (
                 mode === 'login' ? '🎯 Sign In' : '🚀 Send Verification Code'
